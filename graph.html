@@ -1,199 +1,197 @@
 ﻿<!DOCTYPE html>
 <meta charset="utf-8">
 <head>
-	<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
-	<style type="text/css">
-	</style>
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
-	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-	<script src="https://d3js.org/d3.v3.min.js"></script>
-	<script src="Chart.min.js" type="text/javascript"></script>
-	<script>
-	$(document).ready(function(){
-	    $.ajax({
-	        type: 'GET',
-	        url: 'https://opendata.resas-portal.go.jp/api/v1/population/sum/estimate?prefCode=4',
-			headers: {
-			    'X-API-KEY': 'n4oXzpeyDlrDlzPGFYOqu6bn68wyp0bCno34kjkA'
-			},
-	        success: function (res) {
-	        	console.log(res.result.data[3]);
-	        }
-	    });
-	
-	
-	
-	    var g,
-	        width = 800,
-	        height = 550;
-	
-		var chart = null;
-	
-		var getChartOption = function(maxvalue, minvalue) {
-			return {
-		    	responsive: true,
-				scaleShowLabels : false,
-				bezierCurve: false,
-			    scales: {
-			        yAxes: [{
-			            id: "y-axis-1",   // Y軸のID
-			            type: "linear",   // linear固定 
-			            position: "left", // どちら側に表示される軸か？
-			            ticks: {          // スケール
-			                max: maxvalue,
-			                min: minvalue,
-			                stepSize: 100
-			            }
-			        }],
-			        xAxes: [{
-			            id: "x-axis-1",
-			            type: "linear", 
-			            position: "bottom",
-			            ticks: {
-			                max: 2014,
-			                min: 1995,
-			                stepSize: 2
-			            },
-			        }]
-			    }
-			};
-		}
-	
-		// apiから得たデータをグラフ用の形式に変換
-		// param: [{"year": .., "value": ..}]
-		// return: [{"x": .., "y": ..}]
-		var createData = function(data) {
-			var result = [];
-			for (var i = 0; i < data.length; i++) {
-				result.push({
-					"x": data[i].year,
-					"y": data[i].value
-				});
-			}
-		
-			return result;
-		}
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <style type="text/css">
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+    <script src="Chart.min.js" type="text/javascript"></script>
+    <script>
+        $(document).ready(function () {
+            $.ajax({
+                type: 'GET',
+                url: 'https://opendata.resas-portal.go.jp/api/v1/population/sum/estimate?prefCode=4',
+                headers: {
+                    'X-API-KEY': 'n4oXzpeyDlrDlzPGFYOqu6bn68wyp0bCno34kjkA'
+                },
+                success: function (res) {
+                    console.log(res.result.data[3]);
+                }
+            });
 
-	    // svg要素を作成し、データの受け皿となるg要素を追加している
-	    map = d3.select('#map').append('svg')
-	        .attr('width', width)
-	        .attr('height', height)
-	        .append('g');
 
-	    // 同じディレクトリにあるgeojsonファイルをhttp経由で読み込む    
-	    d3.json("miyagisichoson.geojson", function(json) {
-	           var projection,
-	                 path;
 
-	           // 投影を処理する関数を用意する。データからSVGのPATHに変換するため。
-	           projection = d3.geo.mercator()
-	                  .scale(20000)
-	                  .center(d3.geo.centroid(json))  // データから中心点を計算
-	                  .translate([width / 2, height / 2]);
+            var g,
+                width = 800,
+                height = 550;
 
-	            // pathジェネレータ関数
-	            path = d3.geo.path().projection(projection);
-	           //  これがenterしたデータ毎に呼び出されpath要素のd属性に
-	           //  geoJSONデータから変換した値を入れる                
+            var chart = null;
 
-	            map.selectAll('path')
-	            .data(json.features)
-	            .enter()
-	            .append('path')
-	            .attr('d', path)
-	            .attr("fill", function(d){
-	                // 適当に色を塗るなど
-	                return "hsl(10,20%,80%)";
-	            })
-	            .attr("stroke","hsl(80,100%,0%)" )
-	            .on('mouseover', function(d){
-	                // mouseoverの時のインタラクション
-	            })
-	            .on('click', function(d) {
-	                // clickされた時のインタラクション
-					console.log(d.properties);
-					console.log(d.properties.JCODE + ":" + d.properties.SIKUCHOSON);
-					var cityCode = d.properties.JCODE != "04216" ? d.properties.JCODE : "04423";
-					
-			        $.ajax({
-			            type: 'GET',
-			            url: 'https://opendata.resas-portal.go.jp/api/v1/population/sum/estimate?prefCode=4&cityCode=' + cityCode,
-						headers: {
-						    'X-API-KEY': 'n4oXzpeyDlrDlzPGFYOqu6bn68wyp0bCno34kjkA'
-						},
-			            success: function (res) {
-							if (res.result && res.result.data && res.result.data[3]) {
-								console.log(res.result.data[3].data);
-								Chart.defaults.global.tooltips.enabled = false;
+            var getChartOption = function (maxvalue, minvalue) {
+                return {
+                    responsive: true,
+                    scaleShowLabels: false,
+                    bezierCurve: false,
+                    scales: {
+                        yAxes: [{
+                            id: "y-axis-1",   // Y軸のID
+                            type: "linear",   // linear固定
+                            position: "left", // どちら側に表示される軸か？
+                            ticks: {          // スケール
+                                max: maxvalue,
+                                min: minvalue,
+                                stepSize: 100
+                            }
+                        }],
+                        xAxes: [{
+                            id: "x-axis-1",
+                            type: "linear",
+                            position: "bottom",
+                            ticks: {
+                                max: 2014,
+                                min: 1995,
+                                stepSize: 2
+                            },
+                        }]
+                    }
+                };
+            }
 
-								var barChartData = {
-								    labels: [
-								    ],
-								    datasets: [
-									    {
-											type: 'line',
-									        label: '出生数',
-									        data:createData(res.result.data[3].data),
-									        borderColor : "rgba(0,97,132,0.8)",
-									        backgroundColor : "rgba(0,97,132,0)",
-											xAxisID: "x-axis-1",
-											yAxisID: "y-axis-1"
-									    }
-								    ]
-								};
-							
-							    ctx = document.getElementById("canvas").getContext("2d");
-							
-								if (chart) {
-									chart.destroy();
-								}
-								
-							    chart = new Chart(ctx, {
-							        type: 'bar',
-							        data: barChartData,
-							        options: getChartOption(Math.max(...res.result.data[3].data.map((p) => p.value)), Math.min(...res.result.data[3].data.map((p) => p.value)))
-							    });
-								$(".modal-title").text(d.properties.SIKUCHOSON);
-								$("#myModal").modal();
-							}
-							else {
-								alert("選択した市町村には情報がありません。" + d.properties.JCODE + ":" + d.properties.SIKUCHOSON);
-							}
-			            },
-			            error: function () {
-			                alert('失敗。');
-			            }
-			        });
-				
-	            });
-	    });
-	});
+            // apiから得たデータをグラフ用の形式に変換
+            // param: [{"year": .., "value": ..}]
+            // return: [{"x": .., "y": ..}]
+            var createData = function (data) {
+                var result = [];
+                for (var i = 0; i < data.length; i++) {
+                    result.push({
+                        "x": data[i].year,
+                        "y": data[i].value
+                    });
+                }
 
-	</script>
+                return result;
+            }
+
+            // svg要素を作成し、データの受け皿となるg要素を追加している
+            map = d3.select('#map').append('svg')
+                .attr('width', width)
+                .attr('height', height)
+                .append('g');
+
+            // 同じディレクトリにあるgeojsonファイルをhttp経由で読み込む
+            d3.json("miyagisichoson.geojson", function (json) {
+                var projection,
+                    path;
+
+                // 投影を処理する関数を用意する。データからSVGのPATHに変換するため。
+                projection = d3.geo.mercator()
+                    .scale(20000)
+                    .center(d3.geo.centroid(json))  // データから中心点を計算
+                    .translate([width / 2, height / 2]);
+
+                // pathジェネレータ関数
+                path = d3.geo.path().projection(projection);
+                //  geoJSONデータから変換した値を入れる
+                map.selectAll('path')
+                    .data(json.features)
+                    .enter()
+                    .append('path')
+                    .attr('d', path)
+                    .attr("fill", function (d) {
+                        // 適当に色を塗るなど
+                        return "hsl(10,20%,80%)";
+                    })
+                    .attr("stroke", "hsl(80,100%,0%)")
+                    .on('mouseover', function (d) {
+                        // mouseoverの時のインタラクション
+                    })
+                    .on('click', function (d) {
+                        // clickされた時のインタラクション
+                        console.log(d.properties);
+                        console.log(d.properties.JCODE + ":" + d.properties.SIKUCHOSON);
+                        var cityCode = d.properties.JCODE != "04216" ? d.properties.JCODE : "04423";
+
+                        $.ajax({
+                            type: 'GET',
+                            url: 'https://opendata.resas-portal.go.jp/api/v1/population/sum/estimate?prefCode=4&cityCode=' + cityCode,
+                            headers: {
+                                'X-API-KEY': 'n4oXzpeyDlrDlzPGFYOqu6bn68wyp0bCno34kjkA'
+                            },
+                            success: function (res) {
+                                if (res.result && res.result.data && res.result.data[3]) {
+                                    console.log(res.result.data[3].data);
+                                    Chart.defaults.global.tooltips.enabled = false;
+
+                                    var barChartData = {
+                                        labels: [
+                                        ],
+                                        datasets: [
+                                            {
+                                                type: 'line',
+                                                label: '出生数',
+                                                data: createData(res.result.data[3].data),
+                                                borderColor: "rgba(0,97,132,0.8)",
+                                                backgroundColor: "rgba(0,97,132,0)",
+                                                xAxisID: "x-axis-1",
+                                                yAxisID: "y-axis-1"
+                                            }
+                                        ]
+                                    };
+
+                                    ctx = document.getElementById("canvas").getContext("2d");
+
+                                    if (chart) {
+                                        chart.destroy();
+                                    }
+
+                                    chart = new Chart(ctx, {
+                                        type: 'bar',
+                                        data: barChartData,
+                                        options: getChartOption(Math.max(...res.result.data[3].data.map((p) => p.value)), Math.min(...res.result.data[3].data.map((p) => p.value)))
+                                    });
+                                    $(".modal-title").text(d.properties.SIKUCHOSON);
+                                    $("#myModal").modal();
+                                }
+                                else {
+                                    alert("選択した市町村には情報がありません。" + d.properties.JCODE + ":" + d.properties.SIKUCHOSON);
+                                }
+                            },
+                            error: function () {
+                                alert('失敗。');
+                            }
+                        });
+
+                    });
+            });
+        });
+
+    </script>
 </head>
 <body>
-<div id="map" style="width:800;height:500px;float:left;"></div>
-<div style="width:500px;height:400px;float:left;">
-</div>
-  <!-- Modal -->
-  <div class="modal fade" id="myModal" role="dialog">
-    <div class="modal-dialog">
-    
-      <!-- Modal content-->
-      <div class="modal-content">
-        <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal">&times;</button>
-          <h4 class="modal-title"></h4>
-        </div>
-        <div class="modal-body">
-	<div id="shichoson"></div>
-	<canvas id="canvas"></canvas>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">とじる</button>
-        </div>
-	  </div>
+    <div id="map" style="width:800;height:500px;float:left;"></div>
+    <div style="width:500px;height:400px;float:left;">
     </div>
-  </div>
+    <!-- Modal -->
+    <div class="modal fade" id="myModal" role="dialog">
+        <div class="modal-dialog">
 
-</html>
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title"></h4>
+                </div>
+                <div class="modal-body">
+                    <div id="shichoson"></div>
+                    <canvas id="canvas"></canvas>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">とじる</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </html>
