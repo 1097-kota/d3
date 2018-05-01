@@ -1,0 +1,123 @@
+﻿<!DOCTYPE html>
+<meta charset="utf-8">
+<body>
+<div id="map"></div>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script>
+
+// 市町村情報(APIから取得)
+var cities;
+
+(function() {
+    var g,
+        width = 900,
+        height = 650;
+
+    // svg要素を作成し、データの受け皿となるg要素を追加している
+    map = d3.select('#map').append('svg')
+        .attr('width', width)
+        .attr('height', height)
+        .append('g');
+
+    $.ajax({
+        type: 'GET',
+        url: 'https://opendata.resas-portal.go.jp/api/v1/population/future/cities?year=2040&prefCode=04',
+		headers: {
+		    'X-API-KEY': 'n4oXzpeyDlrDlzPGFYOqu6bn68wyp0bCno34kjkA'
+		},
+        success: function (res) {
+			cities = res.result.cities;
+
+		    // 同じディレクトリにあるgeojsonファイルをhttp経由で読み込む    
+		    d3.json("miyagisichoson.geojson", function(json) {
+		           var projection,
+		                 path;
+
+		           // 投影を処理する関数を用意する。データからSVGのPATHに変換するため。
+		           projection = d3.geo.mercator()
+		                  .scale(20000)
+		                  .center(d3.geo.centroid(json))  // データから中心点を計算
+		                  .translate([width / 2, height / 2]);
+
+		            // pathジェネレータ関数
+		            path = d3.geo.path().projection(projection);
+		           //  これがenterしたデータ毎に呼び出されpath要素のd属性に
+		           //  geoJSONデータから変換した値を入れる                
+
+		            map.selectAll('path')
+		            .data(json.features)
+		            .enter()
+		            .append('path')
+		            .attr('d', path)
+		            .attr("fill", function(d){
+						// 色塗り処理
+						// APIから取得したデータから該当図形の情報を抜き出す。
+						var city = getCity(d.properties.JCODE);
+						
+						if (city){
+							// 値に応じて色設定
+		                	return getColor(city.ratio);
+						}
+		            })
+		            .attr("stroke","hsl(80,100%,0%)" )
+		            .on('mouseover', function(d){
+		                // mouseoverの時のインタラクション
+		            })
+		            .on('click', function(d) {
+		                // clickされた時のインタラクション
+						console.log(d.properties);
+						console.log(d.properties.JCODE + ":" + d.properties.SIKUCHOSON);
+						var city = getCity(d.properties.JCODE);
+						if (city){
+							console.log("ratio:" + city.ratio);
+						}
+		            });
+		    });
+			
+			
+        },
+        error: function () {
+            alert('失敗。');
+        }
+    });
+
+})();
+
+// 市町村情報取得
+function getCity(cityCode) {
+	var result = $.grep(cities,
+		function(elem) {
+			// 富谷市だけ町から市に変更されているのでコードがちがう
+			// 仕方ないので手動でマッチング
+			return elem.cityCode == cityCode
+				|| (cityCode == '04216' && elem.cityCode == "04423");
+		}
+	);
+	
+	return result.length > 0 ? result[0] : null;
+}
+
+// 値に応じて色を返す
+function getColor(value)
+{
+	if (value >= 0.6) {
+		return "#ff2800";
+	}
+	else if (value >= 0.4) {
+		return "#ff9900";
+	}
+	else if (value > 0.2) {
+		return "#fff500";
+	}
+	else if (value >= 0) {
+		return "#0041ff";
+	}
+	else {
+		return "#218cff";
+	}
+}
+
+</script>
+<div><img style="position:absolute;top:20px;left:20px;" src="legend.png" /></div>
+</body>
